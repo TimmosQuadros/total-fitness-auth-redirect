@@ -3,87 +3,118 @@
 <head>
   <meta charset="utf-8" />
   <title>Total Fitness — Auth Redirect</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
   <style>
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    :root { --bg: Canvas; --fg: CanvasText; --muted: rgba(0,0,0,.65); }
+    @media (prefers-color-scheme: dark) {
+      :root { --muted: rgba(255,255,255,.65); }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
     .wrap { min-height: 100svh; display: grid; place-items: center; padding: 24px; }
-    .card { width: 100%; max-width: 560px; border-radius: 16px; padding: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08); background: Canvas; color: CanvasText; }
+    .card { width: 100%; max-width: 640px; padding: 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.08); background: var(--bg); }
     h1 { margin: 0 0 8px; font-size: 1.25rem; }
-    p { margin: 0 0 16px; opacity: .8; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .btn { padding: 12px 16px; border-radius: 10px; border: 1px solid ButtonBorder;
-           background: ButtonFace; color: ButtonText; text-decoration: none; display: inline-block; }
+    p { margin: 0 0 16px; color: var(--muted); }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0 16px; }
+    .btn { padding: 12px 16px; border-radius: 10px; border: 1px solid ButtonBorder; background: ButtonFace; color: ButtonText; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
     .btn.primary { background: #2D2D2D; border-color: #2D2D2D; color: #fff; }
-    code { padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.06); }
-    .small { font-size: .9rem; opacity: .8; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: .9rem; background: rgba(127,127,127,.12); padding: 6px 8px; border-radius: 8px; word-break: break-all; }
+    .small { font-size: .9rem; opacity: .85; }
+    .hint { margin-top: 8px; font-size: .85rem; color: var(--muted); }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
       <h1>Opening Total Fitness…</h1>
-      <p>If the app doesn’t open automatically, use the buttons below.</p>
-      <div class="row" style="margin: 12px 0 16px;">
+      <p>If the app doesn’t open, use the buttons below.</p>
+
+      <div class="row">
         <a id="open-app" class="btn primary" href="#">Open in App</a>
         <a id="stay-web" class="btn" href="#">Continue in Browser</a>
+        <button id="copy-link" class="btn" type="button">Copy deep link</button>
       </div>
-      <p class="small">Deep link: <code id="deeplink">totalfitness://auth</code></p>
+
+      <div class="small">
+        Deep link:
+        <span id="deeplink" class="mono">totalfitness://auth</span>
+        <div id="status" class="hint"></div>
+      </div>
     </div>
   </div>
 
   <script>
     (function () {
-      // 1) Collect all params from query AND hash (Supabase can use either)
-      const q = new URLSearchParams(location.search);
-      const hash = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+      // ---- CONFIG: update these two to your real identifiers ----
+      const IOS_SCHEME = "totalfitness";               // matches "scheme" in your app.json
+      const ANDROID_PACKAGE = "com.yourco.totalfitness"; // matches "android.package" in app.json
+      // ----------------------------------------------------------
 
-      // Merge: prefer hash values when present (supabase often returns tokens in hash)
+      // Merge query (?foo=bar) and hash (#access_token=…) into one param bag
+      const q = new URLSearchParams(location.search);
+      const h = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
       const params = new URLSearchParams();
       for (const [k, v] of q) params.set(k, v);
-      for (const [k, v] of hash) params.set(k, v);
+      for (const [k, v] of h) params.set(k, v);
 
-      // 2) Build the deep link to your app, preserving tokens/type/etc.
-      // Your app.json should have: { "expo": { "scheme": "totalfitness" } }
-      const targetPath = "auth"; // handled in your app to route PASSWORD_RECOVERY → /password-reset
-      const deeplinkBase = "totalfitness://" + targetPath;
+      // Build iOS-style scheme deeplink: totalfitness://auth#<params>
+      const path = "auth";
+      const deeplinkBase = `${IOS_SCHEME}://${path}`;
+      const deeplink = params.toString() ? `${deeplinkBase}#${params}` : deeplinkBase;
 
-      // Put all params in the hash to mirror Supabase convention: totalfitness://auth#access_token=...&type=recovery
-      const deeplink = params.toString()
-        ? `${deeplinkBase}#${params.toString()}`
-        : deeplinkBase;
+      // Android Chrome prefers intent:// with package fallback
+      // Example: intent://auth#type=recovery…#Intent;scheme=totalfitness;package=com.yourco.totalfitness;end
+      const androidIntent = `${[
+        `intent://${path}`,
+        params.toString() ? `#${params}` : "",
+        `#Intent;scheme=${IOS_SCHEME};package=${ANDROID_PACKAGE};end`
+      ].join("")}`;
 
-      // 3) Optional "web continue" URL (if you later add a web reset form)
-      // For now we just keep the same page (no-op)
-      const webContinueUrl = location.origin + location.pathname + (params.toString() ? `?${params}` : "");
-
-      // 4) Wire up buttons
-      const elDeep = document.getElementById('deeplink');
-      const elOpen = document.getElementById('open-app');
-      const elStay = document.getElementById('stay-web');
+      // Buttons & UI
+      const elOpen = document.getElementById("open-app");
+      const elStay = document.getElementById("stay-web");
+      const elDeep = document.getElementById("deeplink");
+      const elCopy = document.getElementById("copy-link");
+      const elStatus = document.getElementById("status");
 
       elDeep.textContent = deeplink;
-      elOpen.href = deeplink;
-      elStay.href = webContinueUrl;
 
-      // 5) Try to open the app immediately
-      // On iOS Safari & Android Chrome, navigating to a custom scheme is usually enough.
-      // We still show the page for UX + fallback.
-      const tryOpen = () => {
-        // Using assignment ensures navigation in most browsers
-        window.location = deeplink;
-      };
+      // "Continue in Browser" keeps you here (you can later point to a real web reset page)
+      const stayUrl = location.origin + location.pathname + (params.toString() ? `?${params}` : "");
+      elStay.href = stayUrl;
 
-      // Attempt right away
-      tryOpen();
+      const isAndroid = /Android/i.test(navigator.userAgent);
 
-      // As a fallback, try again shortly after load
-      setTimeout(tryOpen, 400);
+      function openApp() {
+        elStatus.textContent = "Attempting to open the app…";
+        try {
+          if (isAndroid) {
+            window.location.href = androidIntent;
+          } else {
+            window.location.href = deeplink;
+          }
+          // After a short delay, if nothing happened, we remain here as fallback.
+          setTimeout(() => {
+            elStatus.textContent = "If nothing opened, ensure the app is installed. (Dev builds register the scheme; Expo Go does not.)";
+          }, 1200);
+        } catch (err) {
+          console.warn("Open-in-app failed:", err);
+          elStatus.textContent = "Open-in-app failed. Please check that the app is installed.";
+        }
+      }
 
-      // If nothing happens, the user stays on this page and can tap "Open in App"
+      elOpen.addEventListener("click", (e) => { e.preventDefault(); openApp(); });
+
+      elCopy.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(deeplink);
+          elStatus.textContent = "Deep link copied to clipboard.";
+        } catch {
+          elStatus.textContent = "Could not copy link. Long-press to copy.";
+        }
+      });
     })();
   </script>
 </body>
 </html>
-
