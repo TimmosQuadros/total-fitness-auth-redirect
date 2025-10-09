@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Total Fitness — Auth Redirect</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <style>
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    .wrap { min-height: 100svh; display: grid; place-items: center; padding: 24px; }
+    .card { width: 100%; max-width: 560px; border-radius: 16px; padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); background: Canvas; color: CanvasText; }
+    h1 { margin: 0 0 8px; font-size: 1.25rem; }
+    p { margin: 0 0 16px; opacity: .8; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn { padding: 12px 16px; border-radius: 10px; border: 1px solid ButtonBorder;
+           background: ButtonFace; color: ButtonText; text-decoration: none; display: inline-block; }
+    .btn.primary { background: #2D2D2D; border-color: #2D2D2D; color: #fff; }
+    code { padding: 2px 6px; border-radius: 6px; background: rgba(0,0,0,.06); }
+    .small { font-size: .9rem; opacity: .8; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Opening Total Fitness…</h1>
+      <p>If the app doesn’t open automatically, use the buttons below.</p>
+      <div class="row" style="margin: 12px 0 16px;">
+        <a id="open-app" class="btn primary" href="#">Open in App</a>
+        <a id="stay-web" class="btn" href="#">Continue in Browser</a>
+      </div>
+      <p class="small">Deep link: <code id="deeplink">totalfitness://auth</code></p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // 1) Collect all params from query AND hash (Supabase can use either)
+      const q = new URLSearchParams(location.search);
+      const hash = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+
+      // Merge: prefer hash values when present (supabase often returns tokens in hash)
+      const params = new URLSearchParams();
+      for (const [k, v] of q) params.set(k, v);
+      for (const [k, v] of hash) params.set(k, v);
+
+      // 2) Build the deep link to your app, preserving tokens/type/etc.
+      // Your app.json should have: { "expo": { "scheme": "totalfitness" } }
+      const targetPath = "auth"; // handled in your app to route PASSWORD_RECOVERY → /password-reset
+      const deeplinkBase = "totalfitness://" + targetPath;
+
+      // Put all params in the hash to mirror Supabase convention: totalfitness://auth#access_token=...&type=recovery
+      const deeplink = params.toString()
+        ? `${deeplinkBase}#${params.toString()}`
+        : deeplinkBase;
+
+      // 3) Optional "web continue" URL (if you later add a web reset form)
+      // For now we just keep the same page (no-op)
+      const webContinueUrl = location.origin + location.pathname + (params.toString() ? `?${params}` : "");
+
+      // 4) Wire up buttons
+      const elDeep = document.getElementById('deeplink');
+      const elOpen = document.getElementById('open-app');
+      const elStay = document.getElementById('stay-web');
+
+      elDeep.textContent = deeplink;
+      elOpen.href = deeplink;
+      elStay.href = webContinueUrl;
+
+      // 5) Try to open the app immediately
+      // On iOS Safari & Android Chrome, navigating to a custom scheme is usually enough.
+      // We still show the page for UX + fallback.
+      const tryOpen = () => {
+        // Using assignment ensures navigation in most browsers
+        window.location = deeplink;
+      };
+
+      // Attempt right away
+      tryOpen();
+
+      // As a fallback, try again shortly after load
+      setTimeout(tryOpen, 400);
+
+      // If nothing happens, the user stays on this page and can tap "Open in App"
+    })();
+  </script>
+</body>
+</html>
+
