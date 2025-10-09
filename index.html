@@ -2,119 +2,170 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Total Fitness — Auth Redirect</title>
+  <title>Total Fitness — Reset Password</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
   <style>
-    :root { --bg: Canvas; --fg: CanvasText; --muted: rgba(0,0,0,.65); }
-    @media (prefers-color-scheme: dark) {
-      :root { --muted: rgba(255,255,255,.65); }
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
-    .wrap { min-height: 100svh; display: grid; place-items: center; padding: 24px; }
-    .card { width: 100%; max-width: 640px; padding: 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.08); background: var(--bg); }
-    h1 { margin: 0 0 8px; font-size: 1.25rem; }
-    p { margin: 0 0 16px; color: var(--muted); }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0 16px; }
-    .btn { padding: 12px 16px; border-radius: 10px; border: 1px solid ButtonBorder; background: ButtonFace; color: ButtonText; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
-    .btn.primary { background: #2D2D2D; border-color: #2D2D2D; color: #fff; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; font-size: .9rem; background: rgba(127,127,127,.12); padding: 6px 8px; border-radius: 8px; word-break: break-all; }
-    .small { font-size: .9rem; opacity: .85; }
-    .hint { margin-top: 8px; font-size: .85rem; color: var(--muted); }
+    :root { --bg: Canvas; --fg: CanvasText; --muted: rgba(0,0,0,.65); --accent:#2D2D2D; }
+    @media (prefers-color-scheme: dark) { :root { --muted: rgba(255,255,255,.7); } }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial; }
+    .wrap { min-height:100svh; display:grid; place-items:center; padding:24px; }
+    .card { width:100%; max-width:640px; padding:24px; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.08); background:var(--bg); }
+    h1 { margin:0 0 8px; font-size:1.25rem; }
+    p { margin:0 0 16px; color:var(--muted); }
+    label { display:block; font-size:.8rem; font-weight:700; letter-spacing:.04em; margin:14px 0 6px; color:var(--muted); }
+    input[type="password"], input[type="text"] { width:100%; padding:14px; border-radius:10px; border:1px solid color-mix(in oklab, CanvasText 20%, transparent); background: color-mix(in oklab, Canvas 92%, CanvasText 0%); color:var(--fg); }
+    .row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
+    .btn { padding:12px 16px; border-radius:10px; border:1px solid var(--accent); background:var(--accent); color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+    .btn.secondary { background:transparent; color:var(--fg); }
+    .btn[disabled] { opacity:.6; cursor:not-allowed; }
+    .hint { margin-top:10px; font-size:.9rem; color:var(--muted); }
+    .err { color:#b00020; margin-top:10px; }
+    .ok { color:#0a7f3f; margin-top:10px; }
+    .inline { display:flex; gap:8px; align-items:center; margin-top:8px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.85rem; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Opening Total Fitness…</h1>
-      <p>If the app doesn’t open, use the buttons below.</p>
+      <h1>Set a new password</h1>
+      <p>Choose a strong password to secure your account.</p>
 
-      <div class="row">
-        <a id="open-app" class="btn primary" href="#">Open in App</a>
-        <a id="stay-web" class="btn" href="#">Continue in Browser</a>
-        <button id="copy-link" class="btn" type="button">Copy deep link</button>
-      </div>
+      <form id="form" novalidate>
+        <label for="pw1">Create a new password</label>
+        <div class="inline">
+          <input id="pw1" name="pw1" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required />
+          <button id="toggle1" class="btn secondary" type="button">Show</button>
+        </div>
 
-      <div class="small">
-        Deep link:
-        <span id="deeplink" class="mono">totalfitness://auth</span>
-        <div id="status" class="hint"></div>
-      </div>
+        <label for="pw2">Confirm new password</label>
+        <div class="inline">
+          <input id="pw2" name="pw2" type="password" placeholder="Re-enter your new password" autocomplete="new-password" minlength="8" required />
+          <button id="toggle2" class="btn secondary" type="button">Show</button>
+        </div>
+
+        <div class="hint">Tip: use 12+ characters with a mix of letters, numbers, and symbols.</div>
+
+        <div class="row">
+          <button id="submit" class="btn" type="submit">Change Password</button>
+          <button id="clear" class="btn secondary" type="button">Clear</button>
+        </div>
+
+        <div id="msg" class="hint" role="status"></div>
+      </form>
+
+      <div id="tokenInfo" class="hint mono" style="margin-top:16px;"></div>
     </div>
   </div>
 
   <script>
-    (function () {
-      // ---- CONFIG: update these two to your real identifiers ----
-      const IOS_SCHEME = "totalfitness";               // matches "scheme" in your app.json
-      const ANDROID_PACKAGE = "com.yourco.totalfitness"; // matches "android.package" in app.json
-      // ----------------------------------------------------------
+    // ⚙️ EDIT THESE TWO:
+    const SUPABASE_URL = "https://amrjonpzbqerosyaklnq.supabase.co";
+    const SUPABASE_ANON_KEY = "PASTE_YOUR_ANON_KEY_HERE"; // from Supabase → Settings → API (anon public)
 
-      // Merge query (?foo=bar) and hash (#access_token=…) into one param bag
-      const q = new URLSearchParams(location.search);
-      const h = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
-      const params = new URLSearchParams();
-      for (const [k, v] of q) params.set(k, v);
-      for (const [k, v] of h) params.set(k, v);
+    // Parse URL params
+    const q = new URLSearchParams(location.search);
+    const h = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+    const token = q.get("token") || h.get("access_token") || h.get("token");
+    const type = q.get("type") || h.get("type");
 
-      // Build iOS-style scheme deeplink: totalfitness://auth#<params>
-      const path = "auth";
-      const deeplinkBase = `${IOS_SCHEME}://${path}`;
-      const deeplink = params.toString() ? `${deeplinkBase}#${params}` : deeplinkBase;
+    const form = document.getElementById("form");
+    const pw1 = document.getElementById("pw1");
+    const pw2 = document.getElementById("pw2");
+    const submitBtn = document.getElementById("submit");
+    const clearBtn = document.getElementById("clear");
+    const msg = document.getElementById("msg");
+    const tokenInfo = document.getElementById("tokenInfo");
+    const t1 = document.getElementById("toggle1");
+    const t2 = document.getElementById("toggle2");
 
-      // Android Chrome prefers intent:// with package fallback
-      // Example: intent://auth#type=recovery…#Intent;scheme=totalfitness;package=com.yourco.totalfitness;end
-      const androidIntent = `${[
-        `intent://${path}`,
-        params.toString() ? `#${params}` : "",
-        `#Intent;scheme=${IOS_SCHEME};package=${ANDROID_PACKAGE};end`
-      ].join("")}`;
+    // Debug-ish info (safe: token is already in URL)
+    tokenInfo.textContent = token
+      ? `Token detected (${type || "unknown"}): ${token.slice(0,6)}…${token.slice(-6)}`
+      : "No token found in URL. This page expects a Supabase recovery link with ?token=… or #access_token=…";
 
-      // Buttons & UI
-      const elOpen = document.getElementById("open-app");
-      const elStay = document.getElementById("stay-web");
-      const elDeep = document.getElementById("deeplink");
-      const elCopy = document.getElementById("copy-link");
-      const elStatus = document.getElementById("status");
+    function setStatus(text, kind="") {
+      msg.className = kind ? kind : "hint";
+      msg.textContent = text;
+    }
 
-      elDeep.textContent = deeplink;
+    function toggleField(input, btn) {
+      const now = input.type === "password" ? "text" : "password";
+      input.type = now;
+      btn.textContent = now === "text" ? "Hide" : "Show";
+    }
 
-      // "Continue in Browser" keeps you here (you can later point to a real web reset page)
-      const stayUrl = location.origin + location.pathname + (params.toString() ? `?${params}` : "");
-      elStay.href = stayUrl;
+    t1.addEventListener("click", () => toggleField(pw1, t1));
+    t2.addEventListener("click", () => toggleField(pw2, t2));
+    clearBtn.addEventListener("click", () => { pw1.value = ""; pw2.value = ""; setStatus(""); });
 
-      const isAndroid = /Android/i.test(navigator.userAgent);
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      setStatus("");
 
-      function openApp() {
-        elStatus.textContent = "Attempting to open the app…";
-        try {
-          if (isAndroid) {
-            window.location.href = androidIntent;
-          } else {
-            window.location.href = deeplink;
-          }
-          // After a short delay, if nothing happened, we remain here as fallback.
-          setTimeout(() => {
-            elStatus.textContent = "If nothing opened, ensure the app is installed. (Dev builds register the scheme; Expo Go does not.)";
-          }, 1200);
-        } catch (err) {
-          console.warn("Open-in-app failed:", err);
-          elStatus.textContent = "Open-in-app failed. Please check that the app is installed.";
-        }
+      if (!token) {
+        setStatus("Missing token in URL. Please open this page from the Supabase email link.", "err");
+        return;
+      }
+      if ((type && type !== "recovery") && !location.hash.includes("type=recovery")) {
+        setStatus(`Unexpected type "${type}". This page is for password recovery.`, "err");
+        return;
       }
 
-      elOpen.addEventListener("click", (e) => { e.preventDefault(); openApp(); });
+      const p1 = pw1.value.trim();
+      const p2 = pw2.value.trim();
 
-      elCopy.addEventListener("click", async () => {
-        try {
-          await navigator.clipboard.writeText(deeplink);
-          elStatus.textContent = "Deep link copied to clipboard.";
-        } catch {
-          elStatus.textContent = "Could not copy link. Long-press to copy.";
+      if (!p1 || !p2) {
+        setStatus("Please fill out both password fields.", "err");
+        return;
+      }
+      if (p1.length < 8) {
+        setStatus("Password must be at least 8 characters.", "err");
+        return;
+      }
+      if (p1 !== p2) {
+        setStatus("The passwords don’t match. Please retype them.", "err");
+        return;
+      }
+
+      // Lock UI
+      submitBtn.disabled = true;
+      clearBtn.disabled = true;
+      t1.disabled = true;
+      t2.disabled = true;
+      setStatus("Updating password…");
+
+      try {
+        // GoTrue user update endpoint
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+          method: "PUT", // GoTrue accepts PUT/PATCH; PUT is standard here
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${token}`, // <-- token from email link
+          },
+          body: JSON.stringify({ password: p1 }),
+        });
+
+        if (!res.ok) {
+          const errText = await res.text().catch(() => "");
+          throw new Error(`Supabase error ${res.status}: ${errText || res.statusText}`);
         }
-      });
-    })();
+
+        setStatus("✅ Password updated. You can now sign in with your new password.", "ok");
+        pw1.value = ""; pw2.value = "";
+      } catch (err) {
+        console.error(err);
+        setStatus(String(err.message || err), "err");
+      } finally {
+        submitBtn.disabled = false;
+        clearBtn.disabled = false;
+        t1.disabled = false;
+        t2.disabled = false;
+      }
+    });
   </script>
 </body>
 </html>
