@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Total Fitness — Reset Password</title>
+  <title>Total Fitness — Set Password</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
   <style>
@@ -15,7 +15,15 @@
     h1 { margin:0 0 8px; font-size:1.25rem; }
     p { margin:0 0 16px; color:var(--muted); }
     label { display:block; font-size:.8rem; font-weight:700; letter-spacing:.04em; margin:14px 0 6px; color:var(--muted); }
-    input[type="password"], input[type="text"] { width:100%; padding:14px; border-radius:10px; border:1px solid color-mix(in oklab, CanvasText 20%, transparent); background: color-mix(in oklab, Canvas 92%, CanvasText 0%); color:var(--fg); }
+    input[type="password"], input[type="text"], input[type="number"], select {
+      width:100%;
+      padding:14px;
+      border-radius:10px;
+      border:1px solid color-mix(in oklab, CanvasText 20%, transparent);
+      background: color-mix(in oklab, Canvas 92%, CanvasText 0%);
+      color:var(--fg);
+    }
+    select { appearance:auto; }
     .row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
     .btn { padding:12px 16px; border-radius:10px; border:1px solid var(--accent); background:var(--accent); color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
     .btn.secondary { background:transparent; color:var(--fg); }
@@ -25,13 +33,16 @@
     .ok { color:#0a7f3f; margin-top:10px; }
     .inline { display:flex; gap:8px; align-items:center; margin-top:8px; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.85rem; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
+    @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+    .divider { margin-top:18px; padding-top:6px; border-top:1px solid color-mix(in oklab, CanvasText 14%, transparent); }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
       <h1>Set a new password</h1>
-      <p>Choose a strong password to secure your account.</p>
+      <p>Choose a strong password to secure your account. (Works for invite and recovery links.)</p>
 
       <form id="form" novalidate>
         <label for="pw1">Create a new password</label>
@@ -48,8 +59,44 @@
 
         <div class="hint">Tip: use 12+ characters with a mix of letters, numbers, and symbols.</div>
 
+        <div class="divider"></div>
+
+        <p style="margin-top:14px;">Optional: complete your profile details.</p>
+
+        <div class="grid">
+          <div>
+            <label for="fullName">Full name</label>
+            <input id="fullName" name="fullName" type="text" placeholder="e.g. Alex Johnson" autocomplete="name" />
+          </div>
+
+          <div>
+            <label for="initials">Initials</label>
+            <input id="initials" name="initials" type="text" placeholder="e.g. AJ" maxlength="8" />
+          </div>
+
+          <div>
+            <label for="age">Age</label>
+            <input id="age" name="age" type="number" placeholder="e.g. 29" min="1" max="120" inputmode="numeric" />
+          </div>
+
+          <div>
+            <label for="gender">Gender</label>
+            <select id="gender" name="gender">
+              <option value="">Prefer not to say</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div style="grid-column: 1 / -1;">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="text" placeholder="e.g. +45 12 34 56 78" autocomplete="tel" />
+          </div>
+        </div>
+
         <div class="row">
-          <button id="submit" class="btn" type="submit">Change Password</button>
+          <button id="submit" class="btn" type="submit">Continue</button>
           <button id="clear" class="btn secondary" type="button">Clear</button>
         </div>
 
@@ -61,19 +108,28 @@
   </div>
 
   <script>
-    // ⚙️ EDIT THESE TWO:
     const SUPABASE_URL = "https://amrjonpzbqerosyaklnq.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtcmpvbnB6YnFlcm9zeWFrbG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzE4MzYsImV4cCI6MjA3NTQwNzgzNn0.DwinrwLJEPCldiyD7Fbr8QMtgJYAQvG2Q0nuqBotpDs"; // from Supabase → Settings → API (anon public)
 
     // Parse URL params
     const q = new URLSearchParams(location.search);
     const h = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+
+    // Supabase typically redirects here with #access_token=...&type=invite|recovery
+    // (The email link hits /auth/v1/verify first.)
     const token = q.get("token") || h.get("access_token") || h.get("token");
-    const type = q.get("type") || h.get("type");
+    const typeRaw = q.get("type") || h.get("type") || "";
+    const type = String(typeRaw).toLowerCase();
 
     const form = document.getElementById("form");
     const pw1 = document.getElementById("pw1");
     const pw2 = document.getElementById("pw2");
+    const fullNameEl = document.getElementById("fullName");
+    const initialsEl = document.getElementById("initials");
+    const ageEl = document.getElementById("age");
+    const genderEl = document.getElementById("gender");
+    const phoneEl = document.getElementById("phone");
+
     const submitBtn = document.getElementById("submit");
     const clearBtn = document.getElementById("clear");
     const msg = document.getElementById("msg");
@@ -81,10 +137,12 @@
     const t1 = document.getElementById("toggle1");
     const t2 = document.getElementById("toggle2");
 
+    const isPasswordFlow = (type === "recovery" || type === "invite" || type === "");
+
     // Debug-ish info (safe: token is already in URL)
     tokenInfo.textContent = token
       ? `Token detected (${type || "unknown"}): ${token.slice(0,6)}…${token.slice(-6)}`
-      : "No token found in URL. This page expects a Supabase recovery link with ?token=… or #access_token=…";
+      : "No token found in URL. Open this page from the Supabase email link (after verify redirect).";
 
     function setStatus(text, kind="") {
       msg.className = kind ? kind : "hint";
@@ -97,9 +155,65 @@
       btn.textContent = now === "text" ? "Hide" : "Show";
     }
 
+    function cleanText(v) {
+      const s = String(v ?? "").trim();
+      return s.length ? s : null;
+    }
+
+    function cleanAge(v) {
+      if (v === null || v === undefined || v === "") return null;
+      const n = Number(v);
+      if (!Number.isFinite(n)) return null;
+      const i = Math.trunc(n);
+      if (i < 1 || i > 120) return null;
+      return i;
+    }
+
     t1.addEventListener("click", () => toggleField(pw1, t1));
     t2.addEventListener("click", () => toggleField(pw2, t2));
-    clearBtn.addEventListener("click", () => { pw1.value = ""; pw2.value = ""; setStatus(""); });
+    clearBtn.addEventListener("click", () => {
+      pw1.value = ""; pw2.value = "";
+      fullNameEl.value = ""; initialsEl.value = ""; ageEl.value = ""; genderEl.value = ""; phoneEl.value = "";
+      setStatus("");
+    });
+
+    async function fetchAuthedUser(accessToken) {
+      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+        method: "GET",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(`Could not fetch user (${res.status}): ${errText || res.statusText}`);
+      }
+      return await res.json();
+    }
+
+    async function upsertProfile(accessToken, profile) {
+      // Upsert into public.profiles keyed by user_id
+      const url = `${SUPABASE_URL}/rest/v1/profiles?on_conflict=user_id`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${accessToken}`,
+          "Prefer": "resolution=merge-duplicates,return=representation",
+        },
+        body: JSON.stringify(profile),
+      });
+
+      // PostgREST can return 201/200 with representation; handle both
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(`Profile update failed (${res.status}): ${errText || res.statusText}`);
+      }
+      return await res.json().catch(() => null);
+    }
 
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -109,8 +223,9 @@
         setStatus("Missing token in URL. Please open this page from the Supabase email link.", "err");
         return;
       }
-      if ((type && type !== "recovery") && !location.hash.includes("type=recovery")) {
-        setStatus(`Unexpected type "${type}". This page is for password recovery.`, "err");
+
+      if (!isPasswordFlow) {
+        setStatus(`Unexpected type "${type}". This page only supports invite/recovery password setup.`, "err");
         return;
       }
 
@@ -130,6 +245,13 @@
         return;
       }
 
+      // Prepare optional profile payload (only include fields if provided)
+      const full_name = cleanText(fullNameEl.value);
+      const initials = cleanText(initialsEl.value);
+      const age = cleanAge(ageEl.value);
+      const gender = cleanText(genderEl.value); // must match your CHECK constraint if set
+      const phone = cleanText(phoneEl.value);
+
       // Lock UI
       submitBtn.disabled = true;
       clearBtn.disabled = true;
@@ -138,13 +260,13 @@
       setStatus("Updating password…");
 
       try {
-        // GoTrue user update endpoint
+        // 1) Update password
         const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-          method: "PUT", // GoTrue accepts PUT/PATCH; PUT is standard here
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${token}`, // <-- token from email link
+            "Authorization": `Bearer ${token}`,
           },
           body: JSON.stringify({ password: p1 }),
         });
@@ -154,7 +276,33 @@
           throw new Error(`Supabase error ${res.status}: ${errText || res.statusText}`);
         }
 
-        setStatus("✅ Password updated. You can now sign in with your new password.", "ok");
+        // 2) Fetch user (to get user_id + email reliably)
+        setStatus("Password updated. Saving profile…");
+        const user = await fetchAuthedUser(token);
+
+        const profilePayload = {
+          user_id: user.id,
+          email: user.email ?? null,
+          updated_at: new Date().toISOString(),
+        };
+
+        if (full_name) profilePayload.full_name = full_name;
+        if (initials) profilePayload.initials = initials;
+        if (age !== null) profilePayload.age = age;
+        if (gender) profilePayload.gender = gender;
+        if (phone) profilePayload.phone = phone;
+
+        // Only attempt profile upsert if user entered any profile fields
+        const hasProfileFields =
+          !!full_name || !!initials || (age !== null) || !!gender || !!phone;
+
+        if (hasProfileFields) {
+          await upsertProfile(token, profilePayload);
+          setStatus("✅ Password updated and profile saved. You can now sign in.", "ok");
+        } else {
+          setStatus("✅ Password updated. You can now sign in.", "ok");
+        }
+
         pw1.value = ""; pw2.value = "";
       } catch (err) {
         console.error(err);
