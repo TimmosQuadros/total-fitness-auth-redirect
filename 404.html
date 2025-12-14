@@ -36,30 +36,33 @@
     .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
     @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
     .divider { margin-top:18px; padding-top:6px; border-top:1px solid color-mix(in oklab, CanvasText 14%, transparent); }
+    .hidden { display:none !important; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>Set a new password</h1>
-      <p>Choose a strong password to secure your account. (Works for invite and recovery links.)</p>
+      <h1 id="title">Set a new password</h1>
+      <p id="subtitle">Choose a strong password to secure your account.</p>
 
       <form id="form" novalidate>
-        <label for="pw1">Create a new password</label>
-        <div class="inline">
-          <input id="pw1" name="pw1" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required />
-          <button id="toggle1" class="btn secondary" type="button">Show</button>
+        <div id="pwSection">
+          <label for="pw1">Create a new password</label>
+          <div class="inline">
+            <input id="pw1" name="pw1" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" />
+            <button id="toggle1" class="btn secondary" type="button">Show</button>
+          </div>
+
+          <label for="pw2">Confirm new password</label>
+          <div class="inline">
+            <input id="pw2" name="pw2" type="password" placeholder="Re-enter your new password" autocomplete="new-password" minlength="8" />
+            <button id="toggle2" class="btn secondary" type="button">Show</button>
+          </div>
+
+          <div class="hint">Tip: use 12+ characters with a mix of letters, numbers, and symbols.</div>
+
+          <div class="divider"></div>
         </div>
-
-        <label for="pw2">Confirm new password</label>
-        <div class="inline">
-          <input id="pw2" name="pw2" type="password" placeholder="Re-enter your new password" autocomplete="new-password" minlength="8" required />
-          <button id="toggle2" class="btn secondary" type="button">Show</button>
-        </div>
-
-        <div class="hint">Tip: use 12+ characters with a mix of letters, numbers, and symbols.</div>
-
-        <div class="divider"></div>
 
         <p style="margin-top:14px;">Optional: complete your profile details.</p>
 
@@ -108,18 +111,23 @@
   </div>
 
   <script>
+    //This is a static page, it's safe to show anon key here... No need for environment vars since the page is static no runtime or build.
     const SUPABASE_URL = "https://amrjonpzbqerosyaklnq.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtcmpvbnB6YnFlcm9zeWFrbG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzE4MzYsImV4cCI6MjA3NTQwNzgzNn0.DwinrwLJEPCldiyD7Fbr8QMtgJYAQvG2Q0nuqBotpDs"; // from Supabase → Settings → API (anon public)
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtcmpvbnB6YnFlcm9zeWFrbG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzE4MzYsImV4cCI6MjA3NTQwNzgzNn0.DwinrwLJEPCldiyD7Fbr8QMtgJYAQvG2Q0nuqBotpDs";
 
     // Parse URL params
     const q = new URLSearchParams(location.search);
     const h = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
 
-    // Supabase typically redirects here with #access_token=...&type=invite|recovery
-    // (The email link hits /auth/v1/verify first.)
+    // After /auth/v1/verify, Supabase typically redirects here with:
+    // #access_token=...&refresh_token=...&type=invite|recovery|signup
     const token = q.get("token") || h.get("access_token") || h.get("token");
     const typeRaw = q.get("type") || h.get("type") || "";
     const type = String(typeRaw).toLowerCase();
+
+    const titleEl = document.getElementById("title");
+    const subtitleEl = document.getElementById("subtitle");
+    const pwSection = document.getElementById("pwSection");
 
     const form = document.getElementById("form");
     const pw1 = document.getElementById("pw1");
@@ -138,8 +146,25 @@
     const t2 = document.getElementById("toggle2");
 
     const isPasswordFlow = (type === "recovery" || type === "invite" || type === "");
+    const isSignupFlow = (type === "signup");
+    const isSupportedFlow = isPasswordFlow || isSignupFlow;
 
-    // Debug-ish info (safe: token is already in URL)
+    // Adjust UI copy + password section visibility
+    if (isSignupFlow) {
+      titleEl.textContent = "Confirm your email";
+      subtitleEl.textContent = "Your email is verified. You can optionally complete your profile details.";
+      pwSection.classList.add("hidden"); // password was set in the mobile app
+    } else if (type === "invite") {
+      titleEl.textContent = "Accept invite";
+      subtitleEl.textContent = "Set your password to activate your account.";
+      pwSection.classList.remove("hidden");
+    } else {
+      // recovery or unknown (treat unknown as password flow)
+      titleEl.textContent = "Set a new password";
+      subtitleEl.textContent = "Choose a strong password to secure your account.";
+      pwSection.classList.remove("hidden");
+    }
+
     tokenInfo.textContent = token
       ? `Token detected (${type || "unknown"}): ${token.slice(0,6)}…${token.slice(-6)}`
       : "No token found in URL. Open this page from the Supabase email link (after verify redirect).";
@@ -169,8 +194,9 @@
       return i;
     }
 
-    t1.addEventListener("click", () => toggleField(pw1, t1));
-    t2.addEventListener("click", () => toggleField(pw2, t2));
+    t1?.addEventListener("click", () => toggleField(pw1, t1));
+    t2?.addEventListener("click", () => toggleField(pw2, t2));
+
     clearBtn.addEventListener("click", () => {
       pw1.value = ""; pw2.value = "";
       fullNameEl.value = ""; initialsEl.value = ""; ageEl.value = ""; genderEl.value = ""; phoneEl.value = "";
@@ -194,7 +220,6 @@
     }
 
     async function upsertProfile(accessToken, profile) {
-      // Upsert into public.profiles keyed by user_id
       const url = `${SUPABASE_URL}/rest/v1/profiles?on_conflict=user_id`;
       const res = await fetch(url, {
         method: "POST",
@@ -207,7 +232,6 @@
         body: JSON.stringify(profile),
       });
 
-      // PostgREST can return 201/200 with representation; handle both
       if (!res.ok) {
         const errText = await res.text().catch(() => "");
         throw new Error(`Profile update failed (${res.status}): ${errText || res.statusText}`);
@@ -224,60 +248,65 @@
         return;
       }
 
-      if (!isPasswordFlow) {
-        setStatus(`Unexpected type "${type}". This page only supports invite/recovery password setup.`, "err");
+      if (!isSupportedFlow) {
+        setStatus(`Unexpected type "${type}". This page only supports invite, recovery, and signup.`, "err");
         return;
       }
 
       const p1 = pw1.value.trim();
       const p2 = pw2.value.trim();
 
-      if (!p1 || !p2) {
-        setStatus("Please fill out both password fields.", "err");
-        return;
-      }
-      if (p1.length < 8) {
-        setStatus("Password must be at least 8 characters.", "err");
-        return;
-      }
-      if (p1 !== p2) {
-        setStatus("The passwords don’t match. Please retype them.", "err");
-        return;
+      if (isPasswordFlow) {
+        if (!p1 || !p2) {
+          setStatus("Please fill out both password fields.", "err");
+          return;
+        }
+        if (p1.length < 8) {
+          setStatus("Password must be at least 8 characters.", "err");
+          return;
+        }
+        if (p1 !== p2) {
+          setStatus("The passwords don’t match. Please retype them.", "err");
+          return;
+        }
       }
 
-      // Prepare optional profile payload (only include fields if provided)
+      // Optional profile payload (only include if provided)
       const full_name = cleanText(fullNameEl.value);
       const initials = cleanText(initialsEl.value);
       const age = cleanAge(ageEl.value);
-      const gender = cleanText(genderEl.value); // must match your CHECK constraint if set
+      const gender = cleanText(genderEl.value); // must match CHECK constraint if set
       const phone = cleanText(phoneEl.value);
 
       // Lock UI
       submitBtn.disabled = true;
       clearBtn.disabled = true;
-      t1.disabled = true;
-      t2.disabled = true;
-      setStatus("Updating password…");
+      t1 && (t1.disabled = true);
+      t2 && (t2.disabled = true);
+
+      setStatus(isPasswordFlow ? "Updating password…" : "Finalizing…");
 
       try {
-        // 1) Update password
-        const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${token}`,
-          },
-          body: JSON.stringify({ password: p1 }),
-        });
+        // 1) Update password only for invite/recovery
+        if (isPasswordFlow) {
+          const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": SUPABASE_ANON_KEY,
+              "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ password: p1 }),
+          });
 
-        if (!res.ok) {
-          const errText = await res.text().catch(() => "");
-          throw new Error(`Supabase error ${res.status}: ${errText || res.statusText}`);
+          if (!res.ok) {
+            const errText = await res.text().catch(() => "");
+            throw new Error(`Supabase error ${res.status}: ${errText || res.statusText}`);
+          }
         }
 
-        // 2) Fetch user (to get user_id + email reliably)
-        setStatus("Password updated. Saving profile…");
+        // 2) Fetch user (get user_id + email)
+        setStatus("Saving profile…");
         const user = await fetchAuthedUser(token);
 
         const profilePayload = {
@@ -292,15 +321,17 @@
         if (gender) profilePayload.gender = gender;
         if (phone) profilePayload.phone = phone;
 
-        // Only attempt profile upsert if user entered any profile fields
         const hasProfileFields =
           !!full_name || !!initials || (age !== null) || !!gender || !!phone;
 
         if (hasProfileFields) {
           await upsertProfile(token, profilePayload);
-          setStatus("✅ Password updated and profile saved. You can now sign in.", "ok");
+        }
+
+        if (isSignupFlow) {
+          setStatus("✅ Email verified. You can return to the app and sign in.", "ok");
         } else {
-          setStatus("✅ Password updated. You can now sign in.", "ok");
+          setStatus("✅ Password set. You can now sign in.", "ok");
         }
 
         pw1.value = ""; pw2.value = "";
@@ -310,8 +341,8 @@
       } finally {
         submitBtn.disabled = false;
         clearBtn.disabled = false;
-        t1.disabled = false;
-        t2.disabled = false;
+        t1 && (t1.disabled = false);
+        t2 && (t2.disabled = false);
       }
     });
   </script>
