@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Total Fitness — Set Password</title>
+  <title>Total Fitness — Auth</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light dark" />
   <style>
@@ -15,336 +15,125 @@
     h1 { margin:0 0 8px; font-size:1.25rem; }
     p { margin:0 0 16px; color:var(--muted); }
     label { display:block; font-size:.8rem; font-weight:700; letter-spacing:.04em; margin:14px 0 6px; color:var(--muted); }
-    input[type="password"], input[type="text"], input[type="number"], select {
-      width:100%;
-      padding:14px;
-      border-radius:10px;
+    input, select {
+      width:100%; padding:14px; border-radius:10px;
       border:1px solid color-mix(in oklab, CanvasText 20%, transparent);
       background: color-mix(in oklab, Canvas 92%, CanvasText 0%);
       color:var(--fg);
     }
-    select { appearance:auto; }
     .row { display:flex; gap:12px; flex-wrap:wrap; margin-top:18px; }
-    .btn { padding:12px 16px; border-radius:10px; border:1px solid var(--accent); background:var(--accent); color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:8px; cursor:pointer; }
+    .btn { padding:12px 16px; border-radius:10px; border:1px solid var(--accent); background:var(--accent); color:#fff; cursor:pointer; }
     .btn.secondary { background:transparent; color:var(--fg); }
     .btn[disabled] { opacity:.6; cursor:not-allowed; }
     .hint { margin-top:10px; font-size:.9rem; color:var(--muted); }
-    .err { color:#b00020; margin-top:10px; }
-    .ok { color:#0a7f3f; margin-top:10px; }
-    .inline { display:flex; gap:8px; align-items:center; margin-top:8px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:.85rem; }
-    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; }
-    @media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
-    .divider { margin-top:18px; padding-top:6px; border-top:1px solid color-mix(in oklab, CanvasText 14%, transparent); }
+    .err { color:#b00020; }
+    .ok { color:#0a7f3f; }
     .hidden { display:none !important; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width:520px){ .grid{grid-template-columns:1fr;} }
+    .divider { margin-top:18px; padding-top:6px; border-top:1px solid color-mix(in oklab, CanvasText 14%, transparent); }
   </style>
 </head>
+
 <body>
-  <div class="wrap">
-    <div class="card">
-      <h1 id="title">Set a new password</h1>
-      <p id="subtitle">Choose a strong password to secure your account.</p>
+<div class="wrap">
+  <div class="card">
+    <h1 id="title">Set a new password</h1>
+    <p id="subtitle">Choose a strong password to secure your account.</p>
 
-      <form id="form" novalidate>
-        <div id="pwSection">
-          <label for="pw1">Create a new password</label>
-          <div class="inline">
-            <input id="pw1" name="pw1" type="password" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" />
-            <button id="toggle1" class="btn secondary" type="button">Show</button>
-          </div>
-
-          <label for="pw2">Confirm new password</label>
-          <div class="inline">
-            <input id="pw2" name="pw2" type="password" placeholder="Re-enter your new password" autocomplete="new-password" minlength="8" />
-            <button id="toggle2" class="btn secondary" type="button">Show</button>
-          </div>
-
-          <div class="hint">Tip: use 12+ characters with a mix of letters, numbers, and symbols.</div>
-
-          <div class="divider"></div>
-        </div>
-
-        <p style="margin-top:14px;">Optional: complete your profile details.</p>
-
-        <div class="grid">
-          <div>
-            <label for="fullName">Full name</label>
-            <input id="fullName" name="fullName" type="text" placeholder="e.g. Alex Johnson" autocomplete="name" />
-          </div>
-
-          <div>
-            <label for="initials">Initials</label>
-            <input id="initials" name="initials" type="text" placeholder="e.g. AJ" maxlength="8" />
-          </div>
-
-          <div>
-            <label for="age">Age</label>
-            <input id="age" name="age" type="number" placeholder="e.g. 29" min="1" max="120" inputmode="numeric" />
-          </div>
-
-          <div>
-            <label for="gender">Gender</label>
-            <select id="gender" name="gender">
-              <option value="">Prefer not to say</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <div style="grid-column: 1 / -1;">
-            <label for="phone">Phone</label>
-            <input id="phone" name="phone" type="text" placeholder="e.g. +45 12 34 56 78" autocomplete="tel" />
-          </div>
-        </div>
-
-        <div class="row">
-          <button id="submit" class="btn" type="submit">Continue</button>
-          <button id="clear" class="btn secondary" type="button">Clear</button>
-        </div>
-
-        <div id="msg" class="hint" role="status"></div>
-      </form>
-
-      <div id="tokenInfo" class="hint mono" style="margin-top:16px;"></div>
+    <!-- ✅ SIGNUP SUCCESS -->
+    <div id="signupSuccess" class="hidden" style="text-align:center;">
+      <div style="font-size:3rem; margin-bottom:12px;">✅</div>
+      <h2>Email verified</h2>
+      <p class="hint">
+        Your email has been successfully verified.<br />
+        You can now return to the app and sign in.
+      </p>
     </div>
+
+    <!-- FORM (invite / recovery only) -->
+    <form id="form" novalidate>
+      <div id="pwSection">
+        <label>New password</label>
+        <input id="pw1" type="password" minlength="8" autocomplete="new-password" />
+        <label>Confirm password</label>
+        <input id="pw2" type="password" minlength="8" autocomplete="new-password" />
+        <div class="divider"></div>
+      </div>
+
+      <p>Optional profile details</p>
+
+      <div class="grid">
+        <input id="fullName" placeholder="Full name" />
+        <input id="initials" placeholder="Initials" />
+        <input id="age" type="number" placeholder="Age" />
+        <select id="gender">
+          <option value="">Gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="other">Other</option>
+        </select>
+        <input id="phone" placeholder="Phone" />
+      </div>
+
+      <div class="row">
+        <button class="btn" id="submit">Continue</button>
+        <button type="button" class="btn secondary" id="clear">Clear</button>
+      </div>
+
+      <div id="msg" class="hint"></div>
+    </form>
   </div>
+</div>
 
-  <script>
-    //This is a static page, it's safe to show anon key here... No need for environment vars since the page is static no runtime or build.
-    const SUPABASE_URL = "https://amrjonpzbqerosyaklnq.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtcmpvbnB6YnFlcm9zeWFrbG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzE4MzYsImV4cCI6MjA3NTQwNzgzNn0.DwinrwLJEPCldiyD7Fbr8QMtgJYAQvG2Q0nuqBotpDs";
+<script>
+  const SUPABASE_URL = "https://amrjonpzbqerosyaklnq.supabase.co";
+  const SUPABASE_ANON_KEY = "YOUR_ANON_KEY_HERE";
 
-    // Parse URL params
-    const q = new URLSearchParams(location.search);
-    const h = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+  const q = new URLSearchParams(location.search);
+  const h = new URLSearchParams(location.hash.replace("#",""));
+  const token = h.get("access_token");
+  const type = (h.get("type") || "").toLowerCase();
 
-    // After /auth/v1/verify, Supabase typically redirects here with:
-    // #access_token=...&refresh_token=...&type=invite|recovery|signup
-    const token = q.get("token") || h.get("access_token") || h.get("token");
-    const typeRaw = q.get("type") || h.get("type") || "";
-    const type = String(typeRaw).toLowerCase();
+  const isSignup = type === "signup";
+  const isPasswordFlow = type === "invite" || type === "recovery";
 
-    const titleEl = document.getElementById("title");
-    const subtitleEl = document.getElementById("subtitle");
-    const pwSection = document.getElementById("pwSection");
+  const form = document.getElementById("form");
+  const signupSuccess = document.getElementById("signupSuccess");
+  const title = document.getElementById("title");
+  const subtitle = document.getElementById("subtitle");
 
-    const form = document.getElementById("form");
-    const pw1 = document.getElementById("pw1");
-    const pw2 = document.getElementById("pw2");
-    const fullNameEl = document.getElementById("fullName");
-    const initialsEl = document.getElementById("initials");
-    const ageEl = document.getElementById("age");
-    const genderEl = document.getElementById("gender");
-    const phoneEl = document.getElementById("phone");
+  if (isSignup) {
+    title.textContent = "Email verified";
+    subtitle.textContent = "You can now return to the app.";
+    form.classList.add("hidden");
+    signupSuccess.classList.remove("hidden");
+    return;
+  }
 
-    const submitBtn = document.getElementById("submit");
-    const clearBtn = document.getElementById("clear");
-    const msg = document.getElementById("msg");
-    const tokenInfo = document.getElementById("tokenInfo");
-    const t1 = document.getElementById("toggle1");
-    const t2 = document.getElementById("toggle2");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!isPasswordFlow) return;
 
-    const isPasswordFlow = (type === "recovery" || type === "invite" || type === "");
-    const isSignupFlow = (type === "signup");
-    const isSupportedFlow = isPasswordFlow || isSignupFlow;
-
-    // Adjust UI copy + password section visibility
-    if (isSignupFlow) {
-      titleEl.textContent = "Confirm your email";
-      subtitleEl.textContent = "Your email is verified. You can optionally complete your profile details.";
-      pwSection.classList.add("hidden"); // password was set in the mobile app
-    } else if (type === "invite") {
-      titleEl.textContent = "Accept invite";
-      subtitleEl.textContent = "Set your password to activate your account.";
-      pwSection.classList.remove("hidden");
-    } else {
-      // recovery or unknown (treat unknown as password flow)
-      titleEl.textContent = "Set a new password";
-      subtitleEl.textContent = "Choose a strong password to secure your account.";
-      pwSection.classList.remove("hidden");
+    const pw1 = document.getElementById("pw1").value.trim();
+    const pw2 = document.getElementById("pw2").value.trim();
+    if (pw1.length < 8 || pw1 !== pw2) {
+      document.getElementById("msg").textContent = "Passwords do not match.";
+      return;
     }
 
-    tokenInfo.textContent = token
-      ? `Token detected (${type || "unknown"}): ${token.slice(0,6)}…${token.slice(-6)}`
-      : "No token found in URL. Open this page from the Supabase email link (after verify redirect).";
-
-    function setStatus(text, kind="") {
-      msg.className = kind ? kind : "hint";
-      msg.textContent = text;
-    }
-
-    function toggleField(input, btn) {
-      const now = input.type === "password" ? "text" : "password";
-      input.type = now;
-      btn.textContent = now === "text" ? "Hide" : "Show";
-    }
-
-    function cleanText(v) {
-      const s = String(v ?? "").trim();
-      return s.length ? s : null;
-    }
-
-    function cleanAge(v) {
-      if (v === null || v === undefined || v === "") return null;
-      const n = Number(v);
-      if (!Number.isFinite(n)) return null;
-      const i = Math.trunc(n);
-      if (i < 1 || i > 120) return null;
-      return i;
-    }
-
-    t1?.addEventListener("click", () => toggleField(pw1, t1));
-    t2?.addEventListener("click", () => toggleField(pw2, t2));
-
-    clearBtn.addEventListener("click", () => {
-      pw1.value = ""; pw2.value = "";
-      fullNameEl.value = ""; initialsEl.value = ""; ageEl.value = ""; genderEl.value = ""; phoneEl.value = "";
-      setStatus("");
+    await fetch(`${SUPABASE_URL}/auth/v1/user`, {
+      method: "PUT",
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ password: pw1 }),
     });
 
-    async function fetchAuthedUser(accessToken) {
-      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        method: "GET",
-        headers: {
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        throw new Error(`Could not fetch user (${res.status}): ${errText || res.statusText}`);
-      }
-      return await res.json();
-    }
-
-    async function upsertProfile(accessToken, profile) {
-      const url = `${SUPABASE_URL}/rest/v1/profiles?on_conflict=user_id`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${accessToken}`,
-          "Prefer": "resolution=merge-duplicates,return=representation",
-        },
-        body: JSON.stringify(profile),
-      });
-
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        throw new Error(`Profile update failed (${res.status}): ${errText || res.statusText}`);
-      }
-      return await res.json().catch(() => null);
-    }
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      setStatus("");
-
-      if (!token) {
-        setStatus("Missing token in URL. Please open this page from the Supabase email link.", "err");
-        return;
-      }
-
-      if (!isSupportedFlow) {
-        setStatus(`Unexpected type "${type}". This page only supports invite, recovery, and signup.`, "err");
-        return;
-      }
-
-      const p1 = pw1.value.trim();
-      const p2 = pw2.value.trim();
-
-      if (isPasswordFlow) {
-        if (!p1 || !p2) {
-          setStatus("Please fill out both password fields.", "err");
-          return;
-        }
-        if (p1.length < 8) {
-          setStatus("Password must be at least 8 characters.", "err");
-          return;
-        }
-        if (p1 !== p2) {
-          setStatus("The passwords don’t match. Please retype them.", "err");
-          return;
-        }
-      }
-
-      // Optional profile payload (only include if provided)
-      const full_name = cleanText(fullNameEl.value);
-      const initials = cleanText(initialsEl.value);
-      const age = cleanAge(ageEl.value);
-      const gender = cleanText(genderEl.value); // must match CHECK constraint if set
-      const phone = cleanText(phoneEl.value);
-
-      // Lock UI
-      submitBtn.disabled = true;
-      clearBtn.disabled = true;
-      t1 && (t1.disabled = true);
-      t2 && (t2.disabled = true);
-
-      setStatus(isPasswordFlow ? "Updating password…" : "Finalizing…");
-
-      try {
-        // 1) Update password only for invite/recovery
-        if (isPasswordFlow) {
-          const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": SUPABASE_ANON_KEY,
-              "Authorization": `Bearer ${token}`,
-            },
-            body: JSON.stringify({ password: p1 }),
-          });
-
-          if (!res.ok) {
-            const errText = await res.text().catch(() => "");
-            throw new Error(`Supabase error ${res.status}: ${errText || res.statusText}`);
-          }
-        }
-
-        // 2) Fetch user (get user_id + email)
-        setStatus("Saving profile…");
-        const user = await fetchAuthedUser(token);
-
-        const profilePayload = {
-          user_id: user.id,
-          email: user.email ?? null,
-          updated_at: new Date().toISOString(),
-        };
-
-        if (full_name) profilePayload.full_name = full_name;
-        if (initials) profilePayload.initials = initials;
-        if (age !== null) profilePayload.age = age;
-        if (gender) profilePayload.gender = gender;
-        if (phone) profilePayload.phone = phone;
-
-        const hasProfileFields =
-          !!full_name || !!initials || (age !== null) || !!gender || !!phone;
-
-        if (hasProfileFields) {
-          await upsertProfile(token, profilePayload);
-        }
-
-        if (isSignupFlow) {
-          setStatus("✅ Email verified. You can return to the app and sign in.", "ok");
-        } else {
-          setStatus("✅ Password set. You can now sign in.", "ok");
-        }
-
-        pw1.value = ""; pw2.value = "";
-      } catch (err) {
-        console.error(err);
-        setStatus(String(err.message || err), "err");
-      } finally {
-        submitBtn.disabled = false;
-        clearBtn.disabled = false;
-        t1 && (t1.disabled = false);
-        t2 && (t2.disabled = false);
-      }
-    });
-  </script>
+    document.getElementById("msg").textContent = "✅ Password updated";
+  });
+</script>
 </body>
 </html>
