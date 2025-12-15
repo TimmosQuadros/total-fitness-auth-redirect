@@ -37,7 +37,7 @@
     <p id="subtitle">Choose a strong password to secure your account.</p>
 
     <div id="statusScreen" class="hidden" style="text-align:center;">
-      <div style="font-size:3rem; margin-bottom:12px;">⚠️</div>
+    <div id="statusIcon" style="font-size:3rem; margin-bottom:12px;">⚠️</div>
       <p id="statusText"></p>
     </div>
 
@@ -81,6 +81,7 @@
 
   const form = document.getElementById("form");
   const statusScreen = document.getElementById("statusScreen");
+  const statusIcon = document.getElementById("statusIcon");
   const statusText = document.getElementById("statusText");
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
@@ -95,10 +96,12 @@ if (error || errorCode === "otp_expired") {
   subtitle.textContent = "";
   statusText.textContent =
     "This link is no longer valid. Please ask staff to send you a new login link.";
+  statusIcon.textContent = "⚠️";
 
   form.classList.add("hidden");
   statusScreen.classList.remove("hidden");
 }
+
 else if (isPasswordFlow && !token) {
   title.textContent = "Link expired";
   subtitle.textContent = "";
@@ -111,6 +114,7 @@ else if (isPasswordFlow && !token) {
 else if (!isPasswordFlow) {
   title.textContent = "Email verified";
   subtitle.textContent = "You can now return to the app.";
+  statusIcon.textContent = "✅";
 
   form.classList.add("hidden");
   statusScreen.classList.remove("hidden");
