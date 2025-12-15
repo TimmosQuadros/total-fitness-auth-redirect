@@ -43,13 +43,15 @@
     </div>
 
     <form id="form" novalidate>
-      <label>New password</label>
-      <input id="pw1" type="password" minlength="8" autocomplete="new-password" />
+      <div id="passwordSection">
+        <label>New password</label>
+        <input id="pw1" type="password" minlength="8" autocomplete="new-password" />
 
-      <label>Confirm password</label>
-      <input id="pw2" type="password" minlength="8" autocomplete="new-password" />
+        <label>Confirm password</label>
+        <input id="pw2" type="password" minlength="8" autocomplete="new-password" />
 
-      <div class="divider"></div>
+        <div class="divider"></div>
+      </div>
 
       <div class="row">
         <button class="btn" id="submit">Continue</button>
@@ -79,7 +81,7 @@
 
   if (!isPasswordFlow) {
     title.textContent = "Email verified";
-    subtitle.textContent = "";
+    subtitle.textContent = "You can now return to the app.";
     form.classList.add("hidden");
     signupSuccess.classList.remove("hidden");
   }
