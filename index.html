@@ -69,7 +69,13 @@
   const token = h.get("access_token");
   const type = (h.get("type") || "").toLowerCase();
 
-  const isPasswordFlow = type === "invite" || type === "recovery";
+  if (type) {
+    sessionStorage.setItem("auth_flow", type);
+  }
+
+  const rememberedType = sessionStorage.getItem("auth_flow");
+  const effectiveType = type || rememberedType || "";
+  const isPasswordFlow = effectiveType === "invite" || effectiveType === "recovery";
 
   const form = document.getElementById("form");
   const statusScreen = document.getElementById("statusScreen");
@@ -88,7 +94,6 @@
   else if (!isPasswordFlow) {
     title.textContent = "Email verified";
     subtitle.textContent = "You can now return to the app.";
-    statusText.textContent = "";
     form.classList.add("hidden");
     statusScreen.classList.remove("hidden");
   }
