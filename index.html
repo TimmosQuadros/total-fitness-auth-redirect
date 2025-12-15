@@ -37,21 +37,19 @@
     <h1 id="title">Set a new password</h1>
     <p id="subtitle">Choose a strong password to secure your account.</p>
 
-    <div id="signupSuccess" class="hidden" style="text-align:center;">
+    <div id="statusScreen" class="hidden" style="text-align:center;">
       <div style="font-size:3rem; margin-bottom:12px;">✅</div>
-      <p>Your email has been successfully verified.<br>You can now return to the app and sign in.</p>
+      <p id="statusText"></p>
     </div>
 
     <form id="form" novalidate>
-      <div id="passwordSection">
-        <label>New password</label>
-        <input id="pw1" type="password" minlength="8" autocomplete="new-password" />
+      <label>New password</label>
+      <input id="pw1" type="password" minlength="8" autocomplete="new-password" />
 
-        <label>Confirm password</label>
-        <input id="pw2" type="password" minlength="8" autocomplete="new-password" />
+      <label>Confirm password</label>
+      <input id="pw2" type="password" minlength="8" autocomplete="new-password" />
 
-        <div class="divider"></div>
-      </div>
+      <div class="divider"></div>
 
       <div class="row">
         <button class="btn" id="submit">Continue</button>
@@ -74,21 +72,30 @@
   const isPasswordFlow = type === "invite" || type === "recovery";
 
   const form = document.getElementById("form");
-  const signupSuccess = document.getElementById("signupSuccess");
+  const statusScreen = document.getElementById("statusScreen");
+  const statusText = document.getElementById("statusText");
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
   const msg = document.getElementById("msg");
 
-  if (!isPasswordFlow) {
+  if (isPasswordFlow && !token) {
+    title.textContent = "Link expired";
+    subtitle.textContent = "";
+    statusText.textContent = "This link has already been used or has expired. Please request a new one.";
+    form.classList.add("hidden");
+    statusScreen.classList.remove("hidden");
+  } 
+  else if (!isPasswordFlow) {
     title.textContent = "Email verified";
     subtitle.textContent = "You can now return to the app.";
+    statusText.textContent = "";
     form.classList.add("hidden");
-    signupSuccess.classList.remove("hidden");
+    statusScreen.classList.remove("hidden");
   }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!isPasswordFlow) return;
+    if (!isPasswordFlow || !token) return;
 
     const pw1 = document.getElementById("pw1").value.trim();
     const pw2 = document.getElementById("pw2").value.trim();
