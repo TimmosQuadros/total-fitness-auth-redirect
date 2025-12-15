@@ -86,10 +86,11 @@
   const subtitle = document.getElementById("subtitle");
   const msg = document.getElementById("msg");
 
-  console.log("errorcode: " + errorCode);
-  console.log("error: " + error);
+  console.log("errorcode:", errorCode);
+console.log("error:", error);
 
-  if (error || errorCode === "otp_expired") {
+if (error || errorCode === "otp_expired") {
+  sessionStorage.removeItem("auth_flow");
   title.textContent = "Link expired";
   subtitle.textContent = "";
   statusText.textContent =
@@ -98,19 +99,27 @@
   statusScreen.classList.remove("hidden");
   return;
 }
-  else if (isPasswordFlow && !token) {
+
+  if (isPasswordFlow && !token) {
     title.textContent = "Link expired";
     subtitle.textContent = "";
-    statusText.textContent = "This link has already been used. Please request a new one.";
+    statusText.textContent =
+      "This link has already been used. Please request a new one.";
     form.classList.add("hidden");
     statusScreen.classList.remove("hidden");
+    return;
   }
-  else if (!isPasswordFlow) {
+
+  if (!isPasswordFlow) {
     title.textContent = "Email verified";
     subtitle.textContent = "You can now return to the app.";
     form.classList.add("hidden");
     statusScreen.classList.remove("hidden");
+    return;
   }
+}
+
+resolveState();
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
