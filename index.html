@@ -15,7 +15,7 @@
     h1 { margin:0 0 8px; font-size:1.25rem; }
     p { margin:0 0 16px; color:var(--muted); }
     label { display:block; font-size:.8rem; font-weight:700; letter-spacing:.04em; margin:14px 0 6px; color:var(--muted); }
-    input, select {
+    input {
       width:100%; padding:14px; border-radius:10px;
       border:1px solid color-mix(in oklab, CanvasText 20%, transparent);
       background: color-mix(in oklab, Canvas 92%, CanvasText 0%);
@@ -26,11 +26,7 @@
     .btn.secondary { background:transparent; color:var(--fg); }
     .btn[disabled] { opacity:.6; cursor:not-allowed; }
     .hint { margin-top:10px; font-size:.9rem; color:var(--muted); }
-    .err { color:#b00020; }
-    .ok { color:#0a7f3f; }
     .hidden { display:none !important; }
-    .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    @media (max-width:520px){ .grid{grid-template-columns:1fr;} }
     .divider { margin-top:18px; padding-top:6px; border-top:1px solid color-mix(in oklab, CanvasText 14%, transparent); }
   </style>
 </head>
@@ -41,35 +37,19 @@
     <h1 id="title">Set a new password</h1>
     <p id="subtitle">Choose a strong password to secure your account.</p>
 
-    <!-- ✅ SIGNUP SUCCESS -->
     <div id="signupSuccess" class="hidden" style="text-align:center;">
       <div style="font-size:3rem; margin-bottom:12px;">✅</div>
+      <p>Your email has been successfully verified.<br>You can now return to the app and sign in.</p>
     </div>
 
-    <!-- FORM (invite / recovery only) -->
     <form id="form" novalidate>
-      <div id="pwSection">
-        <label>New password</label>
-        <input id="pw1" type="password" minlength="8" autocomplete="new-password" />
-        <label>Confirm password</label>
-        <input id="pw2" type="password" minlength="8" autocomplete="new-password" />
-        <div class="divider"></div>
-      </div>
+      <label>New password</label>
+      <input id="pw1" type="password" minlength="8" autocomplete="new-password" />
 
-      <p>Optional profile details</p>
+      <label>Confirm password</label>
+      <input id="pw2" type="password" minlength="8" autocomplete="new-password" />
 
-      <div class="grid">
-        <input id="fullName" placeholder="Full name" />
-        <input id="initials" placeholder="Initials" />
-        <input id="age" type="number" placeholder="Age" />
-        <select id="gender">
-          <option value="">Gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-        <input id="phone" placeholder="Phone" />
-      </div>
+      <div class="divider"></div>
 
       <div class="row">
         <button class="btn" id="submit">Continue</button>
@@ -85,22 +65,21 @@
   const SUPABASE_URL = "https://amrjonpzbqerosyaklnq.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFtcmpvbnB6YnFlcm9zeWFrbG5xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4MzE4MzYsImV4cCI6MjA3NTQwNzgzNn0.DwinrwLJEPCldiyD7Fbr8QMtgJYAQvG2Q0nuqBotpDs";
 
-  const q = new URLSearchParams(location.search);
   const h = new URLSearchParams(location.hash.replace("#",""));
   const token = h.get("access_token");
   const type = (h.get("type") || "").toLowerCase();
 
-  const isSignup = type === "signup";
   const isPasswordFlow = type === "invite" || type === "recovery";
 
   const form = document.getElementById("form");
   const signupSuccess = document.getElementById("signupSuccess");
   const title = document.getElementById("title");
   const subtitle = document.getElementById("subtitle");
+  const msg = document.getElementById("msg");
 
-  if (isSignup) {
+  if (!isPasswordFlow) {
     title.textContent = "Email verified";
-    subtitle.textContent = "You can now return to the app.";
+    subtitle.textContent = "";
     form.classList.add("hidden");
     signupSuccess.classList.remove("hidden");
   }
@@ -111,8 +90,9 @@
 
     const pw1 = document.getElementById("pw1").value.trim();
     const pw2 = document.getElementById("pw2").value.trim();
+
     if (pw1.length < 8 || pw1 !== pw2) {
-      document.getElementById("msg").textContent = "Passwords do not match.";
+      msg.textContent = "Passwords do not match.";
       return;
     }
 
@@ -126,7 +106,13 @@
       body: JSON.stringify({ password: pw1 }),
     });
 
-    document.getElementById("msg").textContent = "✅ Password updated";
+    msg.textContent = "✅ Password updated";
+  });
+
+  document.getElementById("clear").addEventListener("click", () => {
+    document.getElementById("pw1").value = "";
+    document.getElementById("pw2").value = "";
+    msg.textContent = "";
   });
 </script>
 </body>
