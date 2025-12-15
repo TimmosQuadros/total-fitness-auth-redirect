@@ -44,7 +44,6 @@
     <!-- ✅ SIGNUP SUCCESS -->
     <div id="signupSuccess" class="hidden" style="text-align:center;">
       <div style="font-size:3rem; margin-bottom:12px;">✅</div>
-      <h2>Email verified</h2>
       <p class="hint">
         Your email has been successfully verified.<br />
         You can now return to the app and sign in.
@@ -104,7 +103,7 @@
   const subtitle = document.getElementById("subtitle");
 
   if (isSignup) {
-    //title.textContent = "Email verified";
+    title.textContent = "Email verified";
     //subtitle.textContent = "You can now return to the app.";
     form.classList.add("hidden");
     signupSuccess.classList.remove("hidden");
