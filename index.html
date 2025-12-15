@@ -86,16 +86,18 @@
   const subtitle = document.getElementById("subtitle");
   const msg = document.getElementById("msg");
 
-  cosole.log("errorcode: " + errorCode);
-  cosole.log("error: " + error);
+  console.log("errorcode: " + errorCode);
+  console.log("error: " + error);
 
   if (error || errorCode === "otp_expired") {
-    title.textContent = "Link expired";
-    subtitle.textContent = "";
-    statusText.textContent = "This link is no longer valid. Please ask staff to send you a new login link.";
-    form.classList.add("hidden");
-    statusScreen.classList.remove("hidden");
-  }
+  title.textContent = "Link expired";
+  subtitle.textContent = "";
+  statusText.textContent =
+    "This link is no longer valid. Please ask staff to send you a new login link.";
+  form.classList.add("hidden");
+  statusScreen.classList.remove("hidden");
+  return;
+}
   else if (isPasswordFlow && !token) {
     title.textContent = "Link expired";
     subtitle.textContent = "";
