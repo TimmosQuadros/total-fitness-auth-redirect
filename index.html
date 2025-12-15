@@ -86,6 +86,9 @@
   const subtitle = document.getElementById("subtitle");
   const msg = document.getElementById("msg");
 
+  cosole.log("errorcode: " + errorCode);
+  cosole.log("error: " + error);
+
   if (error || errorCode === "otp_expired") {
     title.textContent = "Link expired";
     subtitle.textContent = "";
